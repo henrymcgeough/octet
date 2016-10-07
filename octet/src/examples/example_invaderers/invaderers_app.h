@@ -147,7 +147,8 @@ namespace octet {
     enum {
       num_sound_sources = 8,
       num_rows = 5,
-      num_cols = 10,
+	  // reduce number of aliens
+      num_cols = 5,  // 10,
       num_missiles = 2,
       num_bombs = 2,
       num_borders = 4,
@@ -435,7 +436,7 @@ namespace octet {
         for (int i = 0; i != num_cols; ++i) {
           assert(first_invaderer_sprite + i + j*num_cols <= last_invaderer_sprite);
           sprites[first_invaderer_sprite + i + j*num_cols].init(
-            invaderer, ((float)i - num_cols * 0.5f) * 0.5f, 2.50f - ((float)j * 0.5f), 0.25f, 0.25f
+            invaderer, ((float)i - num_cols * 0.5f) * 0.5f * 2.0f, (2.50f - ((float)j * 0.5f)) * 2.0f, 0.25f, 0.25f
           );
         }
       }
