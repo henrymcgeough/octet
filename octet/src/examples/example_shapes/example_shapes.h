@@ -28,16 +28,30 @@ namespace octet {
       material *blue = new material(vec4(0, 0, 1, 1));
 
       mat4t mat;
-      mat.translate(-3, 6, 0);
-      app_scene->add_shape(mat, new mesh_sphere(vec3(2, 2, 2), 2), red, true);
-
       mat.loadIdentity();
-      mat.translate(0, 10, 0);
-      app_scene->add_shape(mat, new mesh_box(vec3(2, 2, 2)), red, true);
+      mat.translate( -10, 6, 0);
+      std::vector<mesh_instance*> logs;
+	    for (int i = 0; i != 10; ++i) {
+  	    auto log = app_scene->add_shape(mat, new mesh_cylinder(zcylinder(vec3(0, 0, 0), 0.5, 4)), blue, true);
+        logs.push_back(log);
+        mat.translate(2, 0, 0);
+      }
 
-      mat.loadIdentity();
-      mat.translate( 3, 6, 0);
-      app_scene->add_shape(mat, new mesh_cylinder(zcylinder(vec3(0, 0, 0), 2, 4)), blue, true);
+      // check out bullet stuff for kinematic objects
+      //logs[0]->get_node()->get_rigid_body()->setCollisionFlags
+      //logs.back()->get_node()->get_rigid_body()->setCollisionFlags
+
+      for (int i = 0; i != 10-1; ++i) {
+        auto a = logs[i];
+        auto b = logs[i+1];
+        // try adding a hinge between a and b
+        // try to get app_scene->world
+        // make a btHingeConstraint
+        //auto rba = a->get_node()->get_rigid_body();
+        //auto rbb = b->get_node()->get_rigid_body();
+        //auto cstr = new btHingeConstraint(*rba, *rbb, btVector3(0,0,0), btVector3(0,0,0));
+        // app_scene->world->addConstraint(cstr);
+      }
 
       // ground
       mat.loadIdentity();
