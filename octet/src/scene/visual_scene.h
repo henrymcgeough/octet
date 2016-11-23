@@ -265,6 +265,12 @@ namespace octet { namespace scene {
   public:
     RESOURCE_META(visual_scene)
 
+		/// Get Physiscs World so we can get rigid bodies
+		btDiscreteDynamicsWorld *get_world() {            /// physics world, contains rigid bodies
+		return(world);
+	}
+
+
     /// Create an empty visual_scene; Use add_* functions to add components to the scene.
     visual_scene() {
       frame_number = 0;

@@ -17,6 +17,31 @@ namespace octet {
     ~example_shapes() {
     }
 
+// #define CF_KINEMATIC_OBJECT = 2
+	enum CollisionFlags
+	{
+		CF_STATIC_OBJECT = 1,
+		CF_KINEMATIC_OBJECT = 2,
+		CF_NO_CONTACT_RESPONSE = 4,
+		CF_CUSTOM_MATERIAL_CALLBACK = 8,//this allows per-triangle material (friction/restitution)
+		CF_CHARACTER_OBJECT = 16,
+		CF_DISABLE_VISUALIZE_OBJECT = 32, //disable debug drawing
+		CF_DISABLE_SPU_COLLISION_PROCESSING = 64//disable parallel/SPU processing
+	};
+
+	enum	CollisionObjectTypes
+	{
+		CO_COLLISION_OBJECT = 1,
+		CO_RIGID_BODY = 2,
+		///CO_GHOST_OBJECT keeps track of all objects overlapping its AABB and that pass its collision filter
+		///It is useful for collision sensors, explosion objects, character controller etc.
+		CO_GHOST_OBJECT = 4,
+		CO_SOFT_BODY = 8,
+		CO_HF_FLUID = 16,
+		CO_USER_TYPE = 32,
+		CO_FEATHERSTONE_LINK = 64
+	};
+
     /// this is called once OpenGL is initialized
     void app_init() {
       app_scene =  new visual_scene();
@@ -38,8 +63,8 @@ namespace octet {
       }
 
       // check out bullet stuff for kinematic objects
-      //logs[0]->get_node()->get_rigid_body()->setCollisionFlags
-      //logs.back()->get_node()->get_rigid_body()->setCollisionFlags
+		logs[0]->get_node()->get_rigid_body()->setCollisionFlags(CF_KINEMATIC_OBJECT);
+		logs.back()->get_node()->get_rigid_body()->setCollisionFlags(CF_KINEMATIC_OBJECT);
 
       for (int i = 0; i != 10-1; ++i) {
         auto a = logs[i];
@@ -47,10 +72,17 @@ namespace octet {
         // try adding a hinge between a and b
         // try to get app_scene->world
         // make a btHingeConstraint
-        //auto rba = a->get_node()->get_rigid_body();
-        //auto rbb = b->get_node()->get_rigid_body();
-        //auto cstr = new btHingeConstraint(*rba, *rbb, btVector3(0,0,0), btVector3(0,0,0));
-        // app_scene->world->addConstraint(cstr);
+        auto rba = a->get_node()->get_rigid_body();
+        auto rbb = b->get_node()->get_rigid_body();
+        //auto cstr = new btHingeConstraint(*rba, *rbb, btVector3(0.2f,0.8f,0), btVector3(0.2f,0.8f,0));
+        //app_scene->get_world()->addConstraint(cstr); */
+		
+		btPoint2PointConstraint* leftSpring = new btPoint2PointConstraint(*rba, *rbb, btVector3(-0.5, 0, -0.5), btVector3(0.5, 0, -0.5));
+		app_scene->get_world()->addConstraint(leftSpring);
+
+		btPoint2PointConstraint* rightSpring = new btPoint2PointConstraint(*rba, *rbb, btVector3(-0.5, 0, 0.5), btVector3(0.5, 0, 0.5));
+		app_scene->get_world()->addConstraint(rightSpring);
+
       }
 
       // ground
