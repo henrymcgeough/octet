@@ -17,6 +17,7 @@
 //   Audio
 //
 
+
 namespace octet {
   class sprite {
     // where is our sprite (overkill for a 2D game!)
@@ -102,6 +103,12 @@ namespace octet {
     void translate(float x, float y) {
       modelToWorld.translate(x, y, 0);
     }
+	
+	//Rotate object 
+	void rotate(float a, float x, float y, float z) {
+	  if (a >= 360)  a = 0.0f;
+	  modelToWorld.rotate(a, x, y, z);
+	}
 
     // position the object relative to another.
     void set_relative(sprite &rhs, float x, float y) {
@@ -147,8 +154,7 @@ namespace octet {
     enum {
       num_sound_sources = 8,
       num_rows = 5,
-	  // reduce number of aliens
-      num_cols = 5,  // 10,
+      num_cols = 10,
       num_missiles = 2,
       num_bombs = 2,
       num_borders = 4,
@@ -157,6 +163,7 @@ namespace octet {
       // sprite definitions
       ship_sprite = 0,
       game_over_sprite,
+	  game_background_sprite,
 
       first_invaderer_sprite,
       last_invaderer_sprite = first_invaderer_sprite + num_invaderers - 1,
@@ -221,7 +228,7 @@ namespace octet {
         invader_velocity *= 4;
       } else if (live_invaderers == 0) {
         game_over = true;
-        sprites[game_over_sprite].translate(-20, 0);
+		sprites[game_over_sprite].translate(-20, 0);
       }
     }
 
@@ -233,7 +240,7 @@ namespace octet {
 
       if (--num_lives == 0) {
         game_over = true;
-        sprites[game_over_sprite].translate(-20, 0);
+		sprites[game_over_sprite].translate(-20, 0);
       }
     }
 
@@ -243,12 +250,14 @@ namespace octet {
       // left and right arrows
       if (is_key_down(key_left)) {
         sprites[ship_sprite].translate(-ship_speed, 0);
-        if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+2])) {
+		//sprites[ship_sprite].rotate(-10, 0.0f, 0.0f, 1.0f);
+		if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+2])) {
           sprites[ship_sprite].translate(+ship_speed, 0);
         }
       } else if (is_key_down(key_right)) {
         sprites[ship_sprite].translate(+ship_speed, 0);
-        if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+3])) {
+		//sprites[ship_sprite].rotate(10, 0.0f, 0.0f, 1.0f);
+		if (sprites[ship_sprite].collides_with(sprites[first_border_sprite+3])) {
           sprites[ship_sprite].translate(-ship_speed, 0);
         }
       }
@@ -259,6 +268,15 @@ namespace octet {
       if (missiles_disabled) {
         --missiles_disabled;
       } else if (is_key_going_down(' ')) {
+		// if Game is Over Restart
+		// This is simple Restart may leak memory
+		// And not be right way of re-initialising OpenGL
+		// When Game is Over pressing space bar Restarts
+		if (game_over) {
+		  app_init();
+		  return;
+		}
+
         // find a missile
         for (int i = 0; i != num_missiles; ++i) {
           if (!sprites[first_missile_sprite+i].is_enabled()) {
@@ -422,24 +440,29 @@ namespace octet {
       // set up the matrices with a camera 5 units from the origin
       cameraToWorld.loadIdentity();
       cameraToWorld.translate(0, 0, 3);
-
-      font_texture = resource_dict::get_texture_handle(GL_RGBA, "assets/big_0.gif");
+  
+	  font_texture = resource_dict::get_texture_handle(GL_RGBA, "assets/big_0.gif");
 
       GLuint ship = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/ship.gif");
-      sprites[ship_sprite].init(ship, 0, -2.75f, 0.25f, 0.25f);
+      sprites[ship_sprite].init(ship, 0, -2.5, 0.25f, 0.25f);
 
-      GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/GameOver.gif");
-      sprites[game_over_sprite].init(GameOver, 20, 0, 3, 1.5f);
-
-      GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invaderer.gif");
+      GLuint invaderer = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/invader.gif");
       for (int j = 0; j != num_rows; ++j) {
         for (int i = 0; i != num_cols; ++i) {
           assert(first_invaderer_sprite + i + j*num_cols <= last_invaderer_sprite);
           sprites[first_invaderer_sprite + i + j*num_cols].init(
-            invaderer, ((float)i - num_cols * 0.5f) * 0.5f * 2.0f, (2.50f - ((float)j * 0.5f)) * 2.0f, 0.25f, 0.25f
+            invaderer, ((float)i - num_cols * 0.5f) * 0.5f, 2.50f - ((float)j * 0.5f), 0.25f, 0.25f
           );
         }
       }
+
+	  // Use space gif file as Background
+	  GLuint GameBackGround = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/planet.gif");
+	  sprites[game_background_sprite].init(GameBackGround, 0, 0, 8.0f, 4.0f);
+	 
+	  GLuint GameOver = resource_dict::get_texture_handle(GL_RGBA, "assets/invaderers/gameover.gif");
+	  sprites[game_over_sprite].init(GameOver, 20, 0, 8, 4);
+
 
       // set the border to white for clarity
       GLuint white = resource_dict::get_texture_handle(GL_RGB, "#ffffff");
@@ -483,7 +506,9 @@ namespace octet {
     // called every frame to move things
     void simulate() {
       if (game_over) {
-        return;
+		  fire_missiles();
+		  return;
+		  //app_init();
       }
 
       move_ship();
@@ -529,7 +554,7 @@ namespace octet {
       }
 
       char score_text[32];
-      sprintf(score_text, "score: %d   lives: %d\n", score, num_lives);
+      sprintf(score_text, "score: %d  lives: %d\n", score, num_lives);
       draw_text(texture_shader_, -1.75f, 2, 1.0f/256, score_text);
 
       // move the listener with the camera
